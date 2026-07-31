@@ -1,4 +1,4 @@
-# Polynym — Contextual Identity and Profile Management API
+# Polynym - Contextual Identity and Profile Management API
 
 A Django REST Framework API that stores multiple named identities per person
 (legal, preferred, chosen, religious, username) and returns only the identity
