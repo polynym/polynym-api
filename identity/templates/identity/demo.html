@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Polynym API Prototype</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f7fb;
+        color: #102033;
+        margin: 0;
+        padding: 0;
+      }
+
+      header {
+        background: #102033;
+        color: white;
+        padding: 24px;
+        text-align: center;
+      }
+
+      main {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 20px;
+      }
+
+      .intro {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 6px solid #18b6b6;
+      }
+
+      .cards {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 18px;
+        flex: 1;
+        min-width: 250px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .card h2 {
+        margin-top: 0;
+        color: #102033;
+      }
+
+      button {
+        background: #18b6b6;
+        border: none;
+        color: white;
+        padding: 10px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      button:hover {
+        background: #0f8f8f;
+      }
+
+      pre {
+        background: #102033;
+        color: #d8ffff;
+        padding: 18px;
+        border-radius: 12px;
+        overflow-x: auto;
+        min-height: 140px;
+      }
+
+      .status {
+        margin-top: 20px;
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+        border-left: 6px solid #18b6b6;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Polynym API Prototype</h1>
+      <p>Caller-aware identity disclosure using JWT and role-based filtering</p>
+    </header>
+
+    <main>
+      <section class="intro">
+        <h2>Prototype purpose</h2>
+        <p>
+          This frontend demonstrates one core feature of Polynym: the same
+          person record returns different identity data depending on the caller
+          role.
+        </p>
+      </section>
+
+      <section class="cards">
+        <div class="card">
+          <h2>HR View</h2>
+          <p>Expected result: legal name only.</p>
+          <button onclick="loginAndFetch('hr_user', 'testpass123')">
+            Query as HR
+          </button>
+        </div>
+
+        <div class="card">
+          <h2>Public View</h2>
+          <p>Expected result: chosen or preferred name only.</p>
+          <button onclick="loginAndFetch('public_user', 'testpass123')">
+            Query as Public
+          </button>
+        </div>
+
+        <div class="card">
+          <h2>Self View</h2>
+          <p>
+            Expected result: full identity access for the person themselves.
+          </p>
+          <button onclick="loginAndFetch('maya_self', 'testpass123')">
+            Query as Self
+          </button>
+        </div>
+      </section>
+
+      <section class="status" id="status">No request made yet.</section>
+
+      <h2>API Response</h2>
+      <pre id="output">{}</pre>
+    </main>
+
+    <script>
+      async function loginAndFetch(username, password) {
+        const status = document.getElementById("status");
+        const output = document.getElementById("output");
+
+        status.textContent = "Logging in as " + username + "...";
+        output.textContent = "{}";
+
+        try {
+          const tokenResponse = await fetch("/api/token/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username: username,
+              password: password,
+            }),
+          });
+
+          if (!tokenResponse.ok) {
+            throw new Error("Token request failed: " + tokenResponse.status);
+          }
+
+          const tokenData = await tokenResponse.json();
+          const accessToken = tokenData.access;
+
+          status.textContent = "Token received. Querying identity endpoint...";
+
+          const identityResponse = await fetch("/api/persons/1/identity/", {
+            method: "GET",
+            headers: {
+              Authorization: "Bearer " + accessToken,
+            },
+          });
+
+          const identityData = await identityResponse.json();
+
+          status.textContent =
+            "Request complete. HTTP status: " + identityResponse.status;
+
+          output.textContent = JSON.stringify(identityData, null, 2);
+        } catch (error) {
+          status.textContent = "Error: " + error.message;
+          output.textContent = "{}";
+        }
+      }
+    </script>
+  </body>
+</html>
