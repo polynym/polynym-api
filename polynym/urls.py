@@ -4,15 +4,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from identity.serializers import PolynymTokenObtainPairSerializer
 
-
 urlpatterns = [
     path("admin/", admin.site.urls),
-
     path(
         "api/token/",
-        TokenObtainPairView.as_view(
-            serializer_class=PolynymTokenObtainPairSerializer
-        ),
+        TokenObtainPairView.as_view(serializer_class=PolynymTokenObtainPairSerializer),
         name="token_obtain_pair",
     ),
     path(
@@ -20,6 +16,5 @@ urlpatterns = [
         TokenRefreshView.as_view(),
         name="token_refresh",
     ),
-
     path("", include("identity.urls")),
 ]

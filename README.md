@@ -9,9 +9,9 @@ Based on Project Template 7.1: Identity and Profile Management API.
 
 ## Tech stack
 
-- Django + Django REST Framework
-- SQLite3
-- JWT authentication (djangorestframework-simplejwt)
+ Django + Django REST Framework
+ SQLite3
+ JWT authentication (djangorestframework-simplejwt)
 
 ## Setup
 

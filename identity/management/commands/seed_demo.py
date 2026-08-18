@@ -3,114 +3,79 @@ from django.core.management.base import BaseCommand
 
 from identity.models import CallerRole, Identity, Person, RolePolicy
 
-
 User = get_user_model()
+
+
+# Demonstration record for Persona 1 (Zoe) from the design chapter.
+# The legal name is the birth name held by HR and medical systems; the
+# chosen name is the one used in every other context.
+DEMO_IDENTITIES = {
+    "legal": ("Sebastian Taylor", "legal"),
+    "chosen": ("Zoe Taylor", "public"),
+    "preferred": ("Zo", "informal"),
+    "professional": ("Z. Taylor", "professional"),
+    "religious": ("Zoe Maria", "religious"),
+    "username": ("zoe_codes", "online"),
+}
+
+ROLE_POLICIES = {
+    "self": [
+        "legal",
+        "chosen",
+        "preferred",
+        "professional",
+        "religious",
+        "username",
+    ],
+    "hr": ["legal"],
+    "public": ["chosen", "preferred"],
+    "medical": ["legal", "chosen"],
+}
+
+DEMO_CALLERS = {
+    "zoe_self": ("Zoe self account", "self"),
+    "hr_user": ("HR system", "hr"),
+    "public_user": ("Public caller", "public"),
+    "medical_user": ("Clinical system", "medical"),
+}
 
 
 class Command(BaseCommand):
     help = "Create demo data for the Polynym prototype"
 
     def handle(self, *args, **kwargs):
-        person, _ = Person.objects.get_or_create(
-            email="maya@example.com"
-        )
+        person, _ = Person.objects.get_or_create(email="zoe.taylor@example.com")
 
-        Identity.objects.get_or_create(
-            person=person,
-            type="legal",
-            defaults={
-                "value": "Maria Thompson",
-                "context_tag": "legal",
-                "language_code": "en",
-                "script_code": "",
-            },
-        )
+        for identity_type, (value, context_tag) in DEMO_IDENTITIES.items():
+            Identity.objects.get_or_create(
+                person=person,
+                type=identity_type,
+                defaults={
+                    "value": value,
+                    "context_tag": context_tag,
+                    "language_code": "en",
+                    "script_code": "",
+                },
+            )
 
-        Identity.objects.get_or_create(
-            person=person,
-            type="chosen",
-            defaults={
-                "value": "Maya",
-                "context_tag": "public",
-                "language_code": "en",
-                "script_code": "",
-            },
-        )
+        for role, allowed_types in ROLE_POLICIES.items():
+            RolePolicy.objects.update_or_create(
+                role=role,
+                defaults={"allowed_types": allowed_types},
+            )
 
-        Identity.objects.get_or_create(
-            person=person,
-            type="username",
-            defaults={
-                "value": "maya_codes",
-                "context_tag": "online",
-                "language_code": "en",
-                "script_code": "",
-            },
-        )
+        for username, (caller_name, role) in DEMO_CALLERS.items():
+            user, _ = User.objects.get_or_create(username=username)
+            user.set_password("testpass123")
+            user.save()
 
-        RolePolicy.objects.update_or_create(
-            role="self",
-            defaults={
-                "allowed_types": [
-                    "legal",
-                    "chosen",
-                    "preferred",
-                    "religious",
-                    "professional",
-                    "username",
-                ]
-            },
-        )
+            CallerRole.objects.update_or_create(
+                user=user,
+                defaults={
+                    "person": person if role == "self" else None,
+                    "caller_name": caller_name,
+                    "role": role,
+                },
+            )
 
-        RolePolicy.objects.update_or_create(
-            role="hr",
-            defaults={"allowed_types": ["legal"]},
-        )
-
-        RolePolicy.objects.update_or_create(
-            role="public",
-            defaults={"allowed_types": ["chosen", "preferred"]},
-        )
-
-        self_user, _ = User.objects.get_or_create(username="maya_self")
-        self_user.set_password("testpass123")
-        self_user.save()
-
-        CallerRole.objects.update_or_create(
-            user=self_user,
-            defaults={
-                "person": person,
-                "caller_name": "Maya self account",
-                "role": "self",
-            },
-        )
-
-        hr_user, _ = User.objects.get_or_create(username="hr_user")
-        hr_user.set_password("testpass123")
-        hr_user.save()
-
-        CallerRole.objects.update_or_create(
-            user=hr_user,
-            defaults={
-                "person": None,
-                "caller_name": "HR system",
-                "role": "hr",
-            },
-        )
-
-        public_user, _ = User.objects.get_or_create(username="public_user")
-        public_user.set_password("testpass123")
-        public_user.save()
-
-        CallerRole.objects.update_or_create(
-            user=public_user,
-            defaults={
-                "person": None,
-                "caller_name": "Public caller",
-                "role": "public",
-            },
-        )
-
-        self.stdout.write(
-            self.style.SUCCESS("Demo data created successfully.")
-        )
+        self.stdout.write(self.style.SUCCESS("Demo data created successfully."))

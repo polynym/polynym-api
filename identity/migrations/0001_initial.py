@@ -15,52 +15,143 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Person',
+            name="Person",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', models.EmailField(max_length=254, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("email", models.EmailField(max_length=254, unique=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='RolePolicy',
+            name="RolePolicy",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('role', models.CharField(max_length=30, unique=True)),
-                ('allowed_types', models.JSONField(default=list)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("role", models.CharField(max_length=30, unique=True)),
+                ("allowed_types", models.JSONField(default=list)),
             ],
         ),
         migrations.CreateModel(
-            name='Identity',
+            name="Identity",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type', models.CharField(choices=[('legal', 'Legal'), ('chosen', 'Chosen'), ('preferred', 'Preferred'), ('professional', 'Professional'), ('religious', 'Religious'), ('username', 'Username')], max_length=30)),
-                ('value', models.CharField(max_length=255)),
-                ('context_tag', models.CharField(blank=True, max_length=100)),
-                ('language_code', models.CharField(blank=True, default='', max_length=10)),
-                ('script_code', models.CharField(blank=True, default='', max_length=10)),
-                ('person', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='identities', to='identity.person')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("legal", "Legal"),
+                            ("chosen", "Chosen"),
+                            ("preferred", "Preferred"),
+                            ("professional", "Professional"),
+                            ("religious", "Religious"),
+                            ("username", "Username"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                ("value", models.CharField(max_length=255)),
+                ("context_tag", models.CharField(blank=True, max_length=100)),
+                (
+                    "language_code",
+                    models.CharField(blank=True, default="", max_length=10),
+                ),
+                (
+                    "script_code",
+                    models.CharField(blank=True, default="", max_length=10),
+                ),
+                (
+                    "person",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="identities",
+                        to="identity.person",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='CallerRole',
+            name="CallerRole",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('caller_name', models.CharField(max_length=100)),
-                ('role', models.CharField(max_length=30)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='caller_role', to=settings.AUTH_USER_MODEL)),
-                ('person', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='caller_roles', to='identity.person')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("caller_name", models.CharField(max_length=100)),
+                ("role", models.CharField(max_length=30)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="caller_role",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "person",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="caller_roles",
+                        to="identity.person",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='AuditLog',
+            name="AuditLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('caller_role', models.CharField(max_length=30)),
-                ('action', models.CharField(max_length=20)),
-                ('fields_returned', models.JSONField(default=list)),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('person', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to='identity.person')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("caller_role", models.CharField(max_length=30)),
+                ("action", models.CharField(max_length=20)),
+                ("fields_returned", models.JSONField(default=list)),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                (
+                    "person",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="audit_logs",
+                        to="identity.person",
+                    ),
+                ),
             ],
         ),
     ]

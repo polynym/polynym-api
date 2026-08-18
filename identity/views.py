@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from .models import AuditLog, Person
 from .permissions import HasCallerRole
 from .serializers import PersonFilteredSerializer
-from .services import get_allowed_identity_types, get_caller_role
+from .services import get_caller_role
 
 
 def demo_page(request):
@@ -47,15 +47,13 @@ class PersonIdentityDetailView(APIView):
             context={"request": request},
         )
 
-        allowed_types = get_allowed_identity_types(role)
+        data = serializer.data
 
         AuditLog.objects.create(
             person=person,
             caller_role=role,
             action="GET",
-            fields_returned=allowed_types,
+            fields_returned=[item["type"] for item in data["identities"]],
         )
 
-        return Response(serializer.data)
-    
-    
+        return Response(data)

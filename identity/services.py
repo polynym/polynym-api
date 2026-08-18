@@ -40,4 +40,3 @@ def get_allowed_identity_types(role):
         return policy.allowed_types
     except RolePolicy.DoesNotExist:
         return []
-    
