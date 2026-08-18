@@ -12,8 +12,8 @@ User = get_user_model()
 DEMO_IDENTITIES = {
     "legal": ("Sebastian Taylor", "legal"),
     "chosen": ("Zoe Taylor", "public"),
-    "preferred": ("Zo", "informal"),
-    "professional": ("Z. Taylor", "professional"),
+    "preferred": ("Zoe", "informal"),
+    "professional": ("Dr Zoe Taylor", "professional"),
     "religious": ("Zoe Maria", "religious"),
     "username": ("zoe_codes", "online"),
 }
