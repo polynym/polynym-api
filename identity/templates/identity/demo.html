@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Polynym API Prototype</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Polynym Identity Management API</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -34,23 +35,27 @@
       }
 
       .cards {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
         gap: 16px;
-        flex-wrap: wrap;
       }
 
       .card {
         background: white;
         border-radius: 12px;
         padding: 18px;
-        flex: 1;
-        min-width: 250px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
       }
 
       .card h2 {
         margin-top: 0;
         color: #102033;
+      }
+
+      .card p {
+        flex-grow: 1;
       }
 
       button {
@@ -65,6 +70,22 @@
 
       button:hover {
         background: #0f8f8f;
+      }
+
+      button.danger {
+        background: #c0392b;
+      }
+
+      button.danger:hover {
+        background: #96281b;
+      }
+
+      .erasure {
+        background: white;
+        border-radius: 12px;
+        padding: 18px;
+        margin-top: 20px;
+        border-left: 6px solid #c0392b;
       }
 
       pre {
@@ -87,17 +108,21 @@
   </head>
   <body>
     <header>
-      <h1>Polynym API Prototype</h1>
-      <p>Caller-aware identity disclosure using JWT and role-based filtering</p>
+      <h1>Polynym Identity Management API</h1>
+      <p>
+        Secure caller-aware identity management using JWT authentication and
+        role-based access control
+      </p>
     </header>
 
     <main>
-      <section class="intro">
-        <h2>Prototype purpose</h2>
+      <section class="intro" aria-labelledby="system-overview-heading">
+        <h2 id="system-overview-heading">System overview</h2>
         <p>
-          This frontend demonstrates one core feature of Polynym: the same
-          person record returns different identity data depending on the caller
-          role.
+          This web interface shows how Polynym handles identity requests from
+          different authenticated caller roles. HR, Public, Self and Medical
+          users query the same person record, but the API returns only the
+          identity data permitted for that role.
         </p>
       </section>
 
@@ -120,13 +145,31 @@
 
         <div class="card">
           <h2>Self View</h2>
-          <p>
-            Expected result: full identity access for the person themselves.
-          </p>
+          <p>Expected result: full identity access for the person.</p>
           <button onclick="loginAndFetch('zoe_self', 'testpass123')">
             Query as Self
           </button>
         </div>
+
+        <div class="card">
+          <h2>Medical View</h2>
+          <p>Expected result: legal and chosen name only.</p>
+          <button onclick="loginAndFetch('medical_user', 'testpass123')">
+            Query as Medical
+          </button>
+        </div>
+      </section>
+
+      <section class="erasure">
+        <h2>Right of erasure (GDPR Article 17)</h2>
+        <p>
+          Only the data subject may erase their own record. All identity records
+          are removed; the audit entry is retained without any reference to the
+          erased person.
+        </p>
+        <button class="danger" onclick="eraseRecord()">
+          Erase record as Self
+        </button>
       </section>
 
       <section class="status" id="status">No request made yet.</section>
@@ -177,6 +220,67 @@
             "Request complete. HTTP status: " + identityResponse.status;
 
           output.textContent = JSON.stringify(identityData, null, 2);
+        } catch (error) {
+          status.textContent = "Error: " + error.message;
+          output.textContent = "{}";
+        }
+      }
+
+      async function eraseRecord() {
+        const status = document.getElementById("status");
+        const output = document.getElementById("output");
+
+        const confirmed = confirm(
+          "This permanently deletes the seeded person record. " +
+            "Run 'python manage.py seed_demo' to recreate it. Continue?",
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        status.textContent = "Authenticating as the data subject...";
+        output.textContent = "{}";
+
+        try {
+          const tokenResponse = await fetch("/api/token/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username: "zoe_self",
+              password: "testpass123",
+            }),
+          });
+
+          if (!tokenResponse.ok) {
+            throw new Error("Token request failed: " + tokenResponse.status);
+          }
+
+          const tokenData = await tokenResponse.json();
+
+          status.textContent = "Token received. Requesting erasure...";
+
+          const eraseResponse = await fetch("/api/persons/1/", {
+            method: "DELETE",
+            headers: {
+              Authorization: "Bearer " + tokenData.access,
+            },
+          });
+
+          status.textContent =
+            "Erasure request complete. HTTP status: " + eraseResponse.status;
+
+          if (eraseResponse.status === 204) {
+            output.textContent =
+              "204 No Content\n\nThe person record and all associated " +
+              "identity records have been deleted.\nQuerying any role now " +
+              "returns HTTP 404.";
+          } else {
+            const body = await eraseResponse.json();
+            output.textContent = JSON.stringify(body, null, 2);
+          }
         } catch (error) {
           status.textContent = "Error: " + error.message;
           output.textContent = "{}";

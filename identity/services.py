@@ -5,7 +5,7 @@ def get_caller_role(request):
     """
     Return the caller role for the current request.
 
-    The prototype reads the role from the JWT payload.
+    The API reads the role from the JWT payload.
     If this is not available, it falls back to the user's CallerRole record.
     """
     token = getattr(request, "auth", None)

@@ -14,14 +14,14 @@ from .services import get_caller_role
 
 def demo_page(request):
     """
-    Simple frontend demonstration page.
+    Frontend web interface page.
     """
     return render(request, "identity/demo.html")
 
 
 class PersonIdentityDetailView(APIView):
     """
-    Prototype endpoint:
+    Protected indetity endpoint:
 
     GET /api/persons/<id>/identity/
 
@@ -90,7 +90,7 @@ class PersonErasureView(APIView):
         # Record what is being erased before the records are removed. The
         # audit entry deliberately survives erasure: Article 17 requires
         # the personal data to be deleted, while Article 5(2) requires the
-        # controller to remain able to demonstrate that it was.
+        # controller to remain able to show that it was.
         erased_types = sorted(
             person.identities.values_list("type", flat=True)
         )

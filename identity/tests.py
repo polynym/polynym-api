@@ -36,7 +36,7 @@ ALL_TYPES = [
     "username",
 ]
 
-# Demonstration record for Persona 1 (Zoe), matching seed_demo.
+# Test record for Persona 1 (Zoe), matching seed_demo.
 ZOE_IDENTITIES = {
     "legal": "Sebastian Taylor",
     "chosen": "Zoe Taylor",

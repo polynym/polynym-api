@@ -6,7 +6,7 @@ from identity.models import CallerRole, Identity, Person, RolePolicy
 User = get_user_model()
 
 
-# Demonstration record for Persona 1 (Zoe) from the design chapter.
+# Seeded record for Persona 1 (Zoe) from the design chapter.
 # The legal name is the birth name held by HR and medical systems; the
 # chosen name is the one used in every other context.
 DEMO_IDENTITIES = {
@@ -41,7 +41,7 @@ DEMO_CALLERS = {
 
 
 class Command(BaseCommand):
-    help = "Create demo data for the Polynym prototype"
+    help = "Create seeded data for the Polynym identity management API"
 
     def handle(self, *args, **kwargs):
         person, _ = Person.objects.get_or_create(email="zoe.taylor@example.com")
@@ -78,4 +78,4 @@ class Command(BaseCommand):
                 },
             )
 
-        self.stdout.write(self.style.SUCCESS("Demo data created successfully."))
+        self.stdout.write(self.style.SUCCESS("Seed data created successfully."))
