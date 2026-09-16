@@ -65,9 +65,10 @@ class CallerRole(models.Model):
 class RolePolicy(models.Model):
     role = models.CharField(max_length=30, unique=True)
     allowed_types = models.JSONField(default=list)
+    writable_types = models.JSONField(default=list)
 
     def __str__(self):
-        return f"{self.role}: {self.allowed_types}"
+        return f"{self.role}: read={self.allowed_types} write={self.writable_types}"
 
 
 class AuditLog(models.Model):
