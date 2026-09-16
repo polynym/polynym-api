@@ -77,4 +77,4 @@ class IdentityWriteSerializer(serializers.ModelSerializer):
             "language_code",
             "script_code",
         )
-        read_only_fields = ("id")
+        read_only_fields = ("id",)
