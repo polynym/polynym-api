@@ -40,3 +40,20 @@ def get_allowed_identity_types(role):
         return policy.allowed_types
     except RolePolicy.DoesNotExist:
         return []
+
+def get_writable_identity_types(role):
+    """
+    Identity types a caller role may create, update or delete.
+
+    Returns an empty list for unknown roles, so a caller with no policy
+    can write nothing.
+    """
+    if not role:
+        return []
+
+    try:
+        policy = RolePolicy.objects.get(role=role)
+    except RolePolicy.DoesNotExist:
+        return []
+
+    return policy.writable_types

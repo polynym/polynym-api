@@ -18,14 +18,14 @@ class Identity(models.Model):
     RELIGIOUS = "religious"
     USERNAME = "username"
 
-    IDENTITY_TYPE_CHOICES = [
+    IDENTITY_TYPE_CHOICES = (
         (LEGAL, "Legal"),
         (CHOSEN, "Chosen"),
         (PREFERRED, "Preferred"),
         (PROFESSIONAL, "Professional"),
         (RELIGIOUS, "Religious"),
         (USERNAME, "Username"),
-    ]
+    )
 
     person = models.ForeignKey(
         Person,

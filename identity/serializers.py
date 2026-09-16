@@ -25,13 +25,14 @@ class PolynymTokenObtainPairSerializer(TokenObtainPairSerializer):
 class IdentitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Identity
-        fields = [
+        fields = (
+            "id",
             "type",
             "value",
             "context_tag",
             "language_code",
             "script_code",
-        ]
+        )
 
 
 class PersonFilteredSerializer(serializers.ModelSerializer):
@@ -39,11 +40,11 @@ class PersonFilteredSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Person
-        fields = [
+        fields = (
             "id",
             "email",
             "identities",
-        ]
+        )
 
     def to_representation(self, person):
         data = super().to_representation(person)
@@ -64,3 +65,16 @@ class PersonFilteredSerializer(serializers.ModelSerializer):
 
         identities = person.identities.filter(type__in=allowed_types)
         return IdentitySerializer(identities, many=True).data
+
+class IdentityWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Identity
+        fields = (
+            "id",
+            "type",
+            "value",
+            "context_tag",
+            "language_code",
+            "script_code",
+        )
+        read_only_fields = ("id")
