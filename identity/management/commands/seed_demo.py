@@ -19,17 +19,36 @@ DEMO_IDENTITIES = {
 }
 
 ROLE_POLICIES = {
-    "self": [
-        "legal",
-        "chosen",
-        "preferred",
-        "professional",
-        "religious",
-        "username",
-    ],
-    "hr": ["legal"],
-    "public": ["chosen", "preferred"],
-    "medical": ["legal", "chosen"],
+    "self": {
+        "read": [
+            "legal",
+            "chosen",
+            "preferred",
+            "professional",
+            "religious",
+            "username",
+        ],
+        "write": [
+            "legal",
+            "chosen",
+            "preferred",
+            "professional",
+            "religious",
+            "username",
+        ],
+    },
+    "hr": {
+        "read": ["legal"],
+        "write": ["legal"],
+    },
+    "public": {
+        "read": ["chosen", "preferred"],
+        "write": [],
+    },
+    "medical": {
+        "read": ["legal", "chosen"],
+        "write": [],
+    },
 }
 
 DEMO_CALLERS = {
@@ -58,10 +77,13 @@ class Command(BaseCommand):
                 },
             )
 
-        for role, allowed_types in ROLE_POLICIES.items():
-            RolePolicy.objects.update_or_create(
+            for role, policy in ROLE_POLICIES.items():
+                RolePolicy.objects.update_or_create(
                 role=role,
-                defaults={"allowed_types": allowed_types},
+                defaults={
+                    "allowed_types": policy["read"],
+                    "writable_types": policy["write"],
+                },
             )
 
         for username, (caller_name, role) in DEMO_CALLERS.items():

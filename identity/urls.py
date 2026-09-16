@@ -1,6 +1,12 @@
 from django.urls import path
 
-from .views import PersonErasureView, PersonIdentityDetailView, demo_page
+from .views import (
+    IdentityDetailView,
+    PersonErasureView,
+    PersonIdentityCollectionView,
+    PersonIdentityDetailView,
+    demo_page,
+)
 
 urlpatterns = [
     path("demo/", demo_page, name="demo-page"),
@@ -8,6 +14,16 @@ urlpatterns = [
         "api/persons/<int:person_id>/identity/",
         PersonIdentityDetailView.as_view(),
         name="person-identity-detail",
+    ),
+    path(
+        "api/persons/<int:person_id>/identities/",
+        PersonIdentityCollectionView.as_view(),
+        name="person-identity-collection",
+    ),
+    path(
+        "api/identities/<int:identity_id>/",
+        IdentityDetailView.as_view(),
+        name="identity-detail",
     ),
     path(
         "api/persons/<int:person_id>/",
