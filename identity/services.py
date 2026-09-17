@@ -57,3 +57,66 @@ def get_writable_identity_types(role):
         return []
 
     return policy.writable_types
+
+def select_by_language(identities, accepted_languages):
+    """
+    Given identity records of a single type and an ordered list of
+    accepted language codes (highest priority first), return the record
+    whose language_code best matches.
+
+    Falls back to the first record when no language matches, so a caller
+    that expresses no preference, or an unsupported one, still receives a
+    name rather than nothing.
+    """
+    if not accepted_languages:
+        return identities[0] if identities else None
+
+    for language in accepted_languages:
+        for identity in identities:
+            if identity.language_code == language:
+                return identity
+
+    return identities[0] if identities else None
+
+def parse_accepted_languages(header_value):
+    """
+    Parse an HTTP Accept-Language header into a list of language codes,
+    ordered by descending quality (q) value.
+
+    "zh;q=0.9, en;q=0.8, fr" -> ["fr", "zh", "en"]
+
+    A code with no explicit q defaults to q=1.0, so it is preferred over
+    any weighted code. Codes are lowercased and the region subtag is kept
+    (e.g. "en-gb" stays "en-gb"). An empty or absent header yields [].
+    """
+    if not header_value:
+        return []
+
+    parsed = []
+
+    for part in header_value.split(","):
+        piece = part.strip()
+
+        if not piece:
+            continue
+
+        if ";" in piece:
+            code, _, params = piece.partition(";")
+            code = code.strip().lower()
+            quality = 1.0
+
+            if params.strip().startswith("q="):
+                try:
+                    quality = float(params.strip()[2:])
+                except ValueError:
+                    quality = 1.0
+        else:
+            code = piece.lower()
+            quality = 1.0
+
+        if code:
+            parsed.append((quality, code))
+
+    parsed.sort(key=lambda pair: pair[0], reverse=True)
+
+    return [code for _, code in parsed]
