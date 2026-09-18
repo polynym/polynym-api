@@ -169,6 +169,14 @@ class PolicyLookupUnitTests(TestCase):
 
     def test_parse_accepted_languages_handles_empty_header(self):
         self.assertEqual(parse_accepted_languages(""), [])
+    
+    def test_parse_accepted_languages_tolerates_malformed_quality(self):
+        # A broken q value falls back to 1.0 rather than raising.
+        self.assertEqual(parse_accepted_languages("zh;q=abc"), ["zh"])
+
+    def test_parse_accepted_languages_skips_empty_entries(self):
+        # A stray comma produces an empty piece, which is ignored.
+        self.assertEqual(parse_accepted_languages("en,,zh"), ["en", "zh"])
 
         
 
