@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Polynym Identity Management API</title>
+    <title>Polynym</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -59,7 +59,7 @@
       }
 
       button {
-        background: #18b6b6;
+        background: #0f766e;
         border: none;
         color: white;
         padding: 10px 14px;
@@ -69,15 +69,54 @@
       }
 
       button:hover {
-        background: #0f8f8f;
+        background: #0c5f59;
       }
 
       button.danger {
-        background: #c0392b;
+        background: #b02a1d;
       }
 
       button.danger:hover {
-        background: #96281b;
+        background: #8e2117;
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid #0f2b46;
+        outline-offset: 2px;
+      }
+
+      button:disabled {
+        background: #9aa5ad;
+        cursor: not-allowed;
+      }
+
+      .login {
+        background: white;
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .login form {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: end;
+      }
+
+      .login label {
+        display: block;
+        font-size: 0.85rem;
+        margin-bottom: 4px;
+      }
+
+      .login input {
+        padding: 8px 10px;
+        border: 1px solid #b8c2cc;
+        border-radius: 8px;
+        font-size: 1rem;
       }
 
       .erasure {
@@ -126,37 +165,63 @@
         </p>
       </section>
 
+      <section class="login">
+        <h2>Log in</h2>
+        <p>
+          Use any demonstration account from the table below, then query the API
+          as that caller.
+        </p>
+        <form id="login-form">
+          <div>
+            <label for="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              required
+            />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <button type="submit">Log in</button>
+          <button type="button" id="query-btn" disabled>
+            Query identity endpoint
+          </button>
+        </form>
+      </section>
+
       <section class="cards">
         <div class="card">
           <h2>HR View</h2>
           <p>Expected result: legal name only.</p>
-          <button onclick="loginAndFetch('hr_user', 'testpass123')">
-            Query as HR
-          </button>
+          <p><code>hr_user</code></p>
         </div>
 
         <div class="card">
           <h2>Public View</h2>
           <p>Expected result: chosen or preferred name only.</p>
-          <button onclick="loginAndFetch('public_user', 'testpass123')">
-            Query as Public
-          </button>
+          <p><code>public_user</code></p>
         </div>
 
         <div class="card">
           <h2>Self View</h2>
           <p>Expected result: full identity access for the person.</p>
-          <button onclick="loginAndFetch('zoe_self', 'testpass123')">
-            Query as Self
-          </button>
+          <p><code>self_user</code></p>
         </div>
 
         <div class="card">
           <h2>Medical View</h2>
           <p>Expected result: legal and chosen name only.</p>
-          <button onclick="loginAndFetch('medical_user', 'testpass123')">
-            Query as Medical
-          </button>
+          <p><code>medical</code></p>
         </div>
       </section>
 
@@ -167,69 +232,91 @@
           are removed; the audit entry is retained without any reference to the
           erased person.
         </p>
-        <button class="danger" onclick="eraseRecord()">
+        <button class="danger" id="erase-btn" disabled>
           Erase record as Self
         </button>
       </section>
 
-      <section class="status" id="status">No request made yet.</section>
+      <section class="status" id="status" role="status" aria-live="polite">
+        No request made yet.
+      </section>
 
       <h2>API Response</h2>
       <pre id="output">{}</pre>
     </main>
 
     <script>
-      async function loginAndFetch(username, password) {
-        const status = document.getElementById("status");
-        const output = document.getElementById("output");
+      // The access token is held in memory only, never in localStorage,
+      // so it does not outlive the page.
+      let accessToken = null;
+      let currentUser = null;
 
-        status.textContent = "Logging in as " + username + "...";
-        output.textContent = "{}";
+      const statusEl = document.getElementById("status");
+      const outputEl = document.getElementById("output");
+      const queryBtn = document.getElementById("query-btn");
+      const eraseBtn = document.getElementById("erase-btn");
+
+      document
+        .getElementById("login-form")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          const username = document.getElementById("username").value.trim();
+          const password = document.getElementById("password").value;
+
+          statusEl.textContent = "Logging in as " + username + "...";
+          outputEl.textContent = "{}";
+
+          try {
+            const response = await fetch("/api/token/", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username, password }),
+            });
+
+            if (!response.ok) {
+              throw new Error("Login failed: HTTP " + response.status);
+            }
+
+            const data = await response.json();
+            accessToken = data.access;
+            currentUser = username;
+
+            queryBtn.disabled = false;
+            eraseBtn.disabled = false;
+
+            statusEl.textContent =
+              "Logged in as " + username + ". Token held in memory.";
+          } catch (error) {
+            accessToken = null;
+            currentUser = null;
+            queryBtn.disabled = true;
+            eraseBtn.disabled = true;
+            statusEl.textContent = "Error: " + error.message;
+          }
+        });
+
+      queryBtn.addEventListener("click", async () => {
+        statusEl.textContent =
+          "Querying identity endpoint as " + currentUser + "...";
+        outputEl.textContent = "{}";
 
         try {
-          const tokenResponse = await fetch("/api/token/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              username: username,
-              password: password,
-            }),
+          const response = await fetch("/api/persons/1/identity/", {
+            headers: { Authorization: "Bearer " + accessToken },
           });
 
-          if (!tokenResponse.ok) {
-            throw new Error("Token request failed: " + tokenResponse.status);
-          }
+          const data = await response.json();
 
-          const tokenData = await tokenResponse.json();
-          const accessToken = tokenData.access;
-
-          status.textContent = "Token received. Querying identity endpoint...";
-
-          const identityResponse = await fetch("/api/persons/1/identity/", {
-            method: "GET",
-            headers: {
-              Authorization: "Bearer " + accessToken,
-            },
-          });
-
-          const identityData = await identityResponse.json();
-
-          status.textContent =
-            "Request complete. HTTP status: " + identityResponse.status;
-
-          output.textContent = JSON.stringify(identityData, null, 2);
+          statusEl.textContent =
+            "Request complete. HTTP status: " + response.status;
+          outputEl.textContent = JSON.stringify(data, null, 2);
         } catch (error) {
-          status.textContent = "Error: " + error.message;
-          output.textContent = "{}";
+          statusEl.textContent = "Error: " + error.message;
         }
-      }
+      });
 
-      async function eraseRecord() {
-        const status = document.getElementById("status");
-        const output = document.getElementById("output");
-
+      eraseBtn.addEventListener("click", async () => {
         const confirmed = confirm(
           "This permanently deletes the seeded person record. " +
             "Run 'python manage.py seed_demo' to recreate it. Continue?",
@@ -239,53 +326,31 @@
           return;
         }
 
-        status.textContent = "Authenticating as the data subject...";
-        output.textContent = "{}";
+        statusEl.textContent = "Requesting erasure as " + currentUser + "...";
+        outputEl.textContent = "{}";
 
         try {
-          const tokenResponse = await fetch("/api/token/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              username: "zoe_self",
-              password: "testpass123",
-            }),
-          });
-
-          if (!tokenResponse.ok) {
-            throw new Error("Token request failed: " + tokenResponse.status);
-          }
-
-          const tokenData = await tokenResponse.json();
-
-          status.textContent = "Token received. Requesting erasure...";
-
-          const eraseResponse = await fetch("/api/persons/1/", {
+          const response = await fetch("/api/persons/1/", {
             method: "DELETE",
-            headers: {
-              Authorization: "Bearer " + tokenData.access,
-            },
+            headers: { Authorization: "Bearer " + accessToken },
           });
 
-          status.textContent =
-            "Erasure request complete. HTTP status: " + eraseResponse.status;
+          statusEl.textContent =
+            "Erasure request complete. HTTP status: " + response.status;
 
-          if (eraseResponse.status === 204) {
-            output.textContent =
+          if (response.status === 204) {
+            outputEl.textContent =
               "204 No Content\n\nThe person record and all associated " +
               "identity records have been deleted.\nQuerying any role now " +
               "returns HTTP 404.";
           } else {
-            const body = await eraseResponse.json();
-            output.textContent = JSON.stringify(body, null, 2);
+            const body = await response.json();
+            outputEl.textContent = JSON.stringify(body, null, 2);
           }
         } catch (error) {
-          status.textContent = "Error: " + error.message;
-          output.textContent = "{}";
+          statusEl.textContent = "Error: " + error.message;
         }
-      }
+      });
     </script>
   </body>
 </html>
