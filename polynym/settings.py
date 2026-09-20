@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "identity",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -129,6 +130,18 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Polynym API",
+    "DESCRIPTION": (
+        "Contextual identity management: the same person record is "
+        "disclosed differently depending on the authenticated caller's "
+        "role, with independent read and write policies."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 # Short access-token lifetime limits the exposure window of a stale role

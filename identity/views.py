@@ -21,10 +21,8 @@ def demo_page(request):
 
 class PersonIdentityDetailView(APIView):
     """
-    Protected indetity endpoint:
-
-    GET /api/persons/<id>/identity/
-
+    Protected identity endpoint.
+    
     Returns only the identity records allowed for the caller role.
     """
 
@@ -61,11 +59,7 @@ class PersonIdentityDetailView(APIView):
 
 class PersonErasureView(APIView):
     """
-    GDPR Article 17 erasure:
-
-    DELETE /api/persons/<id>/
-
-    Removes the person record and all associated identity records. Only
+    GDPR Article 17 erasure. Removes the person record and all associated identity records. Only
     the data subject may erase their own record.
     """
 
@@ -108,8 +102,6 @@ class PersonErasureView(APIView):
     
 class PersonIdentityCollectionView(APIView):
     """
-    POST /api/persons/<id>/identities/
-
     Creates an identity record. The caller must be permitted to write
     the requested identity type.
     """
@@ -157,9 +149,6 @@ class PersonIdentityCollectionView(APIView):
 
 class IdentityDetailView(APIView):
     """
-    PUT    /api/identities/<id>/
-    DELETE /api/identities/<id>/
-
     Updates or removes a single identity record.
     """
 
