@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Person, Identity, CallerRole, RolePolicy, AuditLog
+from .models import AuditLog, CallerRole, Identity, Person, RolePolicy
 
 admin.site.register(Person)
 admin.site.register(Identity)

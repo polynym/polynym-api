@@ -10,10 +10,10 @@ from .fixtures import (
 
 
 class DecisionTableDisclosureTests(PolicyFixtureMixin, APITestCase):
-    """Exhaustive role x identity-type coverage: every cell of the policy
-    matrix is asserted as either permitted or denied."""
+    """Test every permitted and denied cell of the disclosure policy matrix."""
 
     def setUp(self):
+        """Create the users, identities, roles and policies used in each test."""
         self.build_fixtures()
 
     def test_every_matrix_cell_behaves_as_specified(self):
@@ -51,8 +51,7 @@ class DecisionTableDisclosureTests(PolicyFixtureMixin, APITestCase):
         self.assertEqual(legal["value"], ZOE_IDENTITIES["legal"])
 
     def test_public_caller_never_receives_birth_name(self):
-        """The clinical motivation in the design chapter depends on this:
-        a public caller must not surface the legal name."""
+        """A public caller receives the chosen name but not the legal name."""
         self.authenticate_as(self.users["public"])
         response = self.client.get(self.url)
 

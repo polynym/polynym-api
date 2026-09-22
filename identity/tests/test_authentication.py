@@ -5,13 +5,13 @@ from rest_framework.test import APITestCase
 
 from identity.models import CallerRole
 
-from .fixtures import POLICY_MATRIX, PolicyFixtureMixin
+from .fixtures import PolicyFixtureMixin
 
 User = get_user_model()
 
 
 class AuthenticationBoundaryTests(PolicyFixtureMixin, APITestCase):
-    """Equivalence partitions for the credential and identifier inputs."""
+    """Test authentication and access boundary conditions."""
 
     def setUp(self):
         self.build_fixtures()
@@ -46,22 +46,22 @@ class AuthenticationBoundaryTests(PolicyFixtureMixin, APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_caller_with_no_policy_receives_nothing(self):
+    def test_caller_with_no_policy_is_rejected(self):
+        """A caller without a configured role policy is rejected."""
         user = User.objects.create_user(
-            username="finance_caller", password="testpass123"
+        username="finance_caller",
+        password="testpass123",
         )
         CallerRole.objects.create(
-            user=user, caller_name="Finance system", role="finance"
+        user=user,
+        caller_name="Finance system",
+        role="finance",
         )
 
         self.authenticate_as(user)
         response = self.client.get(self.url)
 
-        # Fail closed: an authenticated caller with no policy receives an
-        # empty identity list rather than an error, so the response does
-        # not reveal which identity types exist.
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["identities"], [])
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_nonexistent_person_returns_404(self):
         self.authenticate_as(self.users["hr"])
@@ -72,6 +72,7 @@ class AuthenticationBoundaryTests(PolicyFixtureMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_token_for_user_without_caller_role_has_empty_role_claim(self):
+        """A user without a caller role can still obtain a token."""
         User.objects.create_user(username="unassigned", password="testpass123")
 
         response = self.client.post(

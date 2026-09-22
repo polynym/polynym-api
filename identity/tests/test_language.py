@@ -16,7 +16,6 @@ class AcceptLanguageTests(APITestCase):
     def setUp(self):
         self.person = Person.objects.create(email="jenny.chen@example.com")
 
-        # Two legal-name records differing only by language.
         Identity.objects.create(
             person=self.person,
             type="legal",
@@ -80,7 +79,6 @@ class AcceptLanguageTests(APITestCase):
         self.authenticate()
         response = self.client.get(self.url)
 
-        # No header: exactly one legal name is returned, not both.
         self.assertEqual(len(self._legal_values(response)), 1)
 
     def test_unsupported_language_falls_back_to_a_single_record(self):

@@ -6,7 +6,6 @@ from django.test import TestCase
 
 from identity.models import CallerRole, Identity, Person, RolePolicy
 
-
 User = get_user_model()
 
 
