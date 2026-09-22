@@ -49,13 +49,13 @@ class AuthenticationBoundaryTests(PolicyFixtureMixin, APITestCase):
     def test_caller_with_no_policy_is_rejected(self):
         """A caller without a configured role policy is rejected."""
         user = User.objects.create_user(
-        username="finance_caller",
-        password="testpass123",
+            username="finance_caller",
+            password="testpass123",
         )
         CallerRole.objects.create(
-        user=user,
-        caller_name="Finance system",
-        role="finance",
+            user=user,
+            caller_name="Finance system",
+            role="finance",
         )
 
         self.authenticate_as(user)
@@ -71,8 +71,8 @@ class AuthenticationBoundaryTests(PolicyFixtureMixin, APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_token_for_user_without_caller_role_has_empty_role_claim(self):
-        """A user without a caller role can still obtain a token."""
+    def test_user_without_caller_role_can_authenticate(self):
+        """A user without a caller role can still authenticate."""
         User.objects.create_user(username="unassigned", password="testpass123")
 
         response = self.client.post(
@@ -82,3 +82,29 @@ class AuthenticationBoundaryTests(PolicyFixtureMixin, APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_existing_token_uses_current_database_role(self):
+        """An existing token uses the caller's current database role."""
+        token_response = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "username": self.users["hr"].username,
+                "password": "testpass123",
+            },
+            format="json",
+        )
+
+        access_token = token_response.data["access"]
+
+        caller_role = CallerRole.objects.get(user=self.users["hr"])
+        caller_role.role = "public"
+        caller_role.save()
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        returned_types = {item["type"] for item in response.data["identities"]}
+
+        self.assertEqual(returned_types, {"chosen", "preferred"})

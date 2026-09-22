@@ -1,30 +1,12 @@
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import CallerRole, Identity, Person
+from .models import Identity, Person
 from .services import (
     get_allowed_identity_types,
     get_caller_role,
     parse_accepted_languages,
     select_by_language,
 )
-
-
-class PolynymTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """
-    Adds the caller role to the JWT payload.
-    """
-
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-
-        try:
-            token["role"] = user.caller_role.role
-        except CallerRole.DoesNotExist:
-            token["role"] = ""
-
-        return token
 
 
 class IdentitySerializer(serializers.ModelSerializer):

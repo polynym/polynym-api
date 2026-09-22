@@ -3,13 +3,11 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from identity.serializers import PolynymTokenObtainPairSerializer
-
 urlpatterns = [
     path("admin/", admin.site.urls),
     path(
         "api/token/",
-        TokenObtainPairView.as_view(serializer_class=PolynymTokenObtainPairSerializer),
+        TokenObtainPairView.as_view(),
         name="token_obtain_pair",
     ),
     path(
@@ -25,4 +23,3 @@ urlpatterns = [
     ),
     path("", include("identity.urls")),
 ]
-

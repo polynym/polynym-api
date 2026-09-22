@@ -28,7 +28,6 @@ class PolicyLookupUnitTests(TestCase):
         self.assertEqual(get_allowed_identity_types("public"), ["chosen", "preferred"])
 
     def test_returns_empty_list_for_unknown_role(self):
-        # Fail closed: an unrecognised role discloses nothing.
         self.assertEqual(get_allowed_identity_types("finance"), [])
 
     def test_returns_empty_list_for_empty_role(self):
@@ -44,7 +43,6 @@ class PolicyLookupUnitTests(TestCase):
 
     def test_writable_types_for_known_role(self):
         self.assertEqual(get_writable_identity_types("hr"), ["legal"])
-        # public has a read policy but no write list
         self.assertEqual(get_writable_identity_types("public"), [])
 
     def test_writable_returns_empty_for_unknown_or_empty_role(self):
@@ -68,42 +66,67 @@ class PolicyLookupUnitTests(TestCase):
         self.assertEqual(parse_accepted_languages(""), [])
 
     def test_parse_accepted_languages_tolerates_malformed_quality(self):
-        # A broken q value falls back to 1.0 rather than raising.
         self.assertEqual(parse_accepted_languages("zh;q=abc"), ["zh"])
 
     def test_parse_accepted_languages_skips_empty_entries(self):
-        # A stray comma produces an empty piece, which is ignored.
         self.assertEqual(parse_accepted_languages("en,,zh"), ["en", "zh"])
 
 
 class CallerRoleResolutionUnitTests(TestCase):
-    """Unit tests for get_caller_role(), covering both resolution paths."""
+    """Unit tests for database-backed caller role resolution."""
 
     def setUp(self):
         self.user = User.objects.create_user(
-            username="hr_caller", password="testpass123"
+            username="hr_caller",
+            password="testpass123",
         )
-        CallerRole.objects.create(user=self.user, caller_name="HR system", role="hr")
+        CallerRole.objects.create(
+            user=self.user,
+            caller_name="HR system",
+            role="hr",
+        )
 
-    def test_role_is_read_from_token_payload(self):
-        request = FakeRequest(auth=FakeToken({"role": "medical"}))
-        self.assertEqual(get_caller_role(request), "medical")
+    def test_role_is_read_from_database(self):
+        """The caller role is read from the user's CallerRole record."""
+        request = FakeRequest(auth=None, user=self.user)
 
-    def test_falls_back_to_database_when_token_has_no_role(self):
-        request = FakeRequest(auth=FakeToken({}), user=self.user)
         self.assertEqual(get_caller_role(request), "hr")
 
-    def test_token_claim_takes_precedence_over_database(self):
-        # Documents the stale-claim risk: a token issued before a role
-        # change continues to assert the old role until it expires.
-        request = FakeRequest(auth=FakeToken({"role": "self"}), user=self.user)
-        self.assertEqual(get_caller_role(request), "self")
+    def test_token_role_does_not_override_database_role(self):
+        """A role stored in a token does not override the current database role."""
+        request = FakeRequest(
+            auth=FakeToken({"role": "self"}),
+            user=self.user,
+        )
+
+        self.assertEqual(get_caller_role(request), "hr")
+
+    def test_database_role_change_takes_effect(self):
+        """A change to the stored caller role is used on later requests."""
+        caller_role = CallerRole.objects.get(user=self.user)
+        caller_role.role = "public"
+        caller_role.save()
+
+        refreshed_user = User.objects.get(pk=self.user.pk)
+        request = FakeRequest(
+            auth=FakeToken({"role": "hr"}),
+            user=refreshed_user,
+        )
+
+        self.assertEqual(get_caller_role(request), "public")
 
     def test_returns_none_when_no_token_and_no_user(self):
+        """A request without an authenticated user has no caller role."""
         request = FakeRequest(auth=None, user=None)
+
         self.assertIsNone(get_caller_role(request))
 
     def test_returns_none_when_user_has_no_caller_role(self):
-        orphan = User.objects.create_user(username="orphan", password="testpass123")
+        """An authenticated user without a CallerRole has no caller role."""
+        orphan = User.objects.create_user(
+            username="orphan",
+            password="testpass123",
+        )
         request = FakeRequest(auth=FakeToken({}), user=orphan)
+
         self.assertIsNone(get_caller_role(request))
