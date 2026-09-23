@@ -1,3 +1,11 @@
+"""Create the seeded data used to demonstrate how Polynym works.
+
+The demonstration person is Zoe Taylor from Persona 1 in the design
+chapter of the report. The seeded records include legal, chosen, preferred,
+professional, religious and username identities together with caller roles
+and disclosure policies.
+"""
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
@@ -6,9 +14,6 @@ from identity.models import CallerRole, Identity, Person, RolePolicy
 User = get_user_model()
 
 
-# Seeded record for Persona 1 (Zoe) from the design chapter.
-# The legal name is the birth name held by HR and medical systems; the
-# chosen name is the one used in every other context.
 DEMO_IDENTITIES = {
     "legal": ("Sebastian Taylor", "legal"),
     "chosen": ("Zoe Taylor", "public"),
@@ -60,9 +65,12 @@ DEMO_CALLERS = {
 
 
 class Command(BaseCommand):
+    """Create the demonstration data used to show how Polynym works."""
+
     help = "Create seeded data for the Polynym identity management API"
 
     def handle(self, *args, **kwargs):
+        """Create or update the seeded demonstration data."""
         person, _ = Person.objects.get_or_create(email="zoe.taylor@example.com")
 
         for identity_type, (value, context_tag) in DEMO_IDENTITIES.items():
@@ -77,8 +85,8 @@ class Command(BaseCommand):
                 },
             )
 
-            for role, policy in ROLE_POLICIES.items():
-                RolePolicy.objects.update_or_create(
+        for role, policy in ROLE_POLICIES.items():
+            RolePolicy.objects.update_or_create(
                 role=role,
                 defaults={
                     "allowed_types": policy["read"],

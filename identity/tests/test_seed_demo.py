@@ -10,16 +10,17 @@ User = get_user_model()
 
 
 def run_seed():
+    """Run the seed_demo command and return its output."""
     out = StringIO()
     call_command("seed_demo", stdout=out)
     return out.getvalue()
 
 
 class SeedDemoCommandTests(TestCase):
-    """The seed command builds the complete demonstration world, and
-    running it repeatedly is harmless."""
+    """Test creation and repeatability of the seeded demonstration data."""
 
     def test_creates_the_demo_person_with_all_identity_types(self):
+        """The seeded person has all six supported identity types."""
         run_seed()
 
         person = Person.objects.get(email="zoe.taylor@example.com")
@@ -38,6 +39,7 @@ class SeedDemoCommandTests(TestCase):
         )
 
     def test_creates_all_four_role_policies_with_write_lists(self):
+        """The seed command creates the four configured role policies."""
         run_seed()
 
         self.assertEqual(RolePolicy.objects.count(), 4)
@@ -49,6 +51,7 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(public.writable_types, [])
 
     def test_creates_caller_accounts_and_links_only_self_to_person(self):
+        """Only the self caller account is linked to the person record."""
         run_seed()
 
         self.assertEqual(CallerRole.objects.count(), 4)
@@ -60,6 +63,7 @@ class SeedDemoCommandTests(TestCase):
         self.assertIsNone(hr.person)
 
     def test_seeded_credentials_can_authenticate(self):
+        """Seeded caller credentials can obtain a JWT."""
         run_seed()
 
         response = self.client.post(
@@ -70,6 +74,7 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_running_twice_creates_no_duplicates(self):
+        """Running the seed command twice does not create duplicates."""
         run_seed()
         run_seed()
 
@@ -77,4 +82,3 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(Identity.objects.count(), 6)
         self.assertEqual(RolePolicy.objects.count(), 4)
         self.assertEqual(User.objects.count(), 4)
-        
