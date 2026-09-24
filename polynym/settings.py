@@ -92,7 +92,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# Internationalisation
 
 LANGUAGE_CODE = "en-us"
 

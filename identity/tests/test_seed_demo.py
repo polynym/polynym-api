@@ -1,18 +1,31 @@
+import os
 from io import StringIO
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 
 from identity.models import CallerRole, Identity, Person, RolePolicy
 
 User = get_user_model()
 
+DEMO_PASSWORDS = {
+    "DEMO_SELF_PASSWORD": "self-test-password",
+    "DEMO_HR_PASSWORD": "hr-test-password",
+    "DEMO_PUBLIC_PASSWORD": "public-test-password",
+    "DEMO_MEDICAL_PASSWORD": "medical-test-password",
+}
+
 
 def run_seed():
     """Run the seed_demo command and return its output."""
     out = StringIO()
-    call_command("seed_demo", stdout=out)
+
+    with patch.dict(os.environ, DEMO_PASSWORDS):
+        call_command("seed_demo", stdout=out)
+
     return out.getvalue()
 
 
@@ -68,7 +81,10 @@ class SeedDemoCommandTests(TestCase):
 
         response = self.client.post(
             "/api/token/",
-            {"username": "hr_user", "password": "testpass123"},
+            {
+                "username": "hr_user",
+                "password": DEMO_PASSWORDS["DEMO_HR_PASSWORD"],
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -82,3 +98,16 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(Identity.objects.count(), 6)
         self.assertEqual(RolePolicy.objects.count(), 4)
         self.assertEqual(User.objects.count(), 4)
+
+    def test_missing_demo_passwords_prevent_seeding(self):
+        """Missing demo password variables prevent partial seed data creation."""
+        missing_passwords = {name: "" for name in DEMO_PASSWORDS}
+
+        with (
+            patch.dict(os.environ, missing_passwords),
+            self.assertRaises(CommandError),
+        ):
+            call_command("seed_demo")
+
+        self.assertEqual(Person.objects.count(), 0)
+        self.assertEqual(User.objects.count(), 0)

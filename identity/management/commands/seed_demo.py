@@ -6,8 +6,10 @@ professional, religious and username identities together with caller roles
 and disclosure policies.
 """
 
+import os
+
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from identity.models import CallerRole, Identity, Person, RolePolicy
 
@@ -57,10 +59,10 @@ ROLE_POLICIES = {
 }
 
 DEMO_CALLERS = {
-    "zoe_self": ("Zoe self account", "self"),
-    "hr_user": ("HR system", "hr"),
-    "public_user": ("Public caller", "public"),
-    "medical_user": ("Clinical system", "medical"),
+    "zoe_self": ("Zoe self account", "self", "DEMO_SELF_PASSWORD"),
+    "hr_user": ("HR system", "hr", "DEMO_HR_PASSWORD"),
+    "public_user": ("Public caller", "public", "DEMO_PUBLIC_PASSWORD"),
+    "medical_user": ("Clinical system", "medical", "DEMO_MEDICAL_PASSWORD"),
 }
 
 
@@ -71,6 +73,23 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         """Create or update the seeded demonstration data."""
+        missing_passwords = [
+            environment_variable
+            for _, (_, _, environment_variable) in DEMO_CALLERS.items()
+            if not os.environ.get(environment_variable)
+        ]
+
+        if missing_passwords:
+            raise CommandError(
+                "Missing required demo password environment variable(s): "
+                + ", ".join(missing_passwords)
+            )
+
+        passwords = {
+            username: os.environ[environment_variable]
+            for username, (_, _, environment_variable) in DEMO_CALLERS.items()
+        }
+
         person, _ = Person.objects.get_or_create(email="zoe.taylor@example.com")
 
         for identity_type, (value, context_tag) in DEMO_IDENTITIES.items():
@@ -94,9 +113,9 @@ class Command(BaseCommand):
                 },
             )
 
-        for username, (caller_name, role) in DEMO_CALLERS.items():
+        for username, (caller_name, role, _) in DEMO_CALLERS.items():
             user, _ = User.objects.get_or_create(username=username)
-            user.set_password("testpass123")
+            user.set_password(passwords[username])
             user.save()
 
             CallerRole.objects.update_or_create(
