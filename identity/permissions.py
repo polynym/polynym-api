@@ -13,7 +13,4 @@ class HasCallerRole(BasePermission):
         """Check that the caller's role has an associated policy."""
         role = get_caller_role(request)
 
-        return bool(
-            role
-            and RolePolicy.objects.filter(role=role).exists()
-        )
+        return bool(role and RolePolicy.objects.filter(role=role).exists())
