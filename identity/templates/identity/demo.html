@@ -13,6 +13,10 @@
         padding: 0;
       }
 
+      [hidden] {
+        display: none !important;
+      }
+
       header {
         background: #102033;
         color: white;
@@ -143,6 +147,40 @@
         border-radius: 8px;
         border-left: 6px solid #18b6b6;
       }
+      .password-wrapper {
+        position: relative;
+      }
+
+      .password-wrapper input {
+        padding-right: 52px;
+      }
+
+      .toggle-password {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        transform: translateY(-50%);
+        background: none;
+        color: #0f766e;
+        padding: 2px 4px;
+        font-size: 0.85rem;
+      }
+
+      .toggle-password:hover {
+        background: none;
+        text-decoration: underline;
+      }
+
+      .logged-in-panel {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .logged-in-panel p {
+        margin: 0;
+      }
     </style>
   </head>
   <body>
@@ -184,44 +222,60 @@
           </div>
           <div>
             <label for="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              required
-            />
+            <div class="password-wrapper">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                id="toggle-password"
+                class="toggle-password"
+                aria-label="Show password"
+              >
+                Show
+              </button>
+            </div>
           </div>
           <button type="submit">Log in</button>
+        </form>
+        <div id="logged-in-panel" class="logged-in-panel" hidden>
+          <p>
+            <strong>Logged in as <span id="logged-in-user"></span></strong>
+          </p>
           <button type="button" id="query-btn" disabled>
             Query identity endpoint
           </button>
-        </form>
+          <button type="button" id="logout-btn">Log out</button>
+        </div>
       </section>
 
       <section class="cards">
         <div class="card">
           <h2>HR View</h2>
           <p>Expected result: legal name only.</p>
-          <p><code>hr_user</code></p>
+          <p>Demo account: <code>hr_user</code></p>
         </div>
 
         <div class="card">
           <h2>Public View</h2>
-          <p>Expected result: chosen or preferred name only.</p>
-          <p><code>public_user</code></p>
+          <p>Expected result: chosen and preferred name only.</p>
+          <p>Demo account: <code>public_user</code></p>
         </div>
 
         <div class="card">
           <h2>Self View</h2>
           <p>Expected result: full identity access for the person.</p>
-          <p><code>self_user</code></p>
+          <p>Demo account: <code>zoe_self</code></p>
         </div>
 
         <div class="card">
           <h2>Medical View</h2>
           <p>Expected result: legal and chosen name only.</p>
-          <p><code>medical</code></p>
+          <p>Demo account: <code>medical_user</code></p>
         </div>
       </section>
 
@@ -255,46 +309,101 @@
       const outputEl = document.getElementById("output");
       const queryBtn = document.getElementById("query-btn");
       const eraseBtn = document.getElementById("erase-btn");
+      const loginForm = document.getElementById("login-form");
+      const loggedInPanel = document.getElementById("logged-in-panel");
+      const loggedInUser = document.getElementById("logged-in-user");
+      const logoutBtn = document.getElementById("logout-btn");
+      loginForm.hidden = false;
+      loggedInPanel.hidden = true;
+      queryBtn.disabled = true;
+      eraseBtn.disabled = true;
+      const demoPersonId = "{{ demo_person_id|default:'' }}";
+      const passwordInput = document.getElementById("password");
+      const togglePasswordBtn = document.getElementById("toggle-password");
+      togglePasswordBtn.addEventListener("click", () => {
+        const passwordIsHidden = passwordInput.type === "password";
 
-      document
-        .getElementById("login-form")
-        .addEventListener("submit", async (event) => {
-          event.preventDefault();
+        passwordInput.type = passwordIsHidden ? "text" : "password";
+        togglePasswordBtn.textContent = passwordIsHidden ? "Hide" : "Show";
+        togglePasswordBtn.setAttribute(
+          "aria-label",
+          passwordIsHidden ? "Hide password" : "Show password",
+        );
+      });
 
-          const username = document.getElementById("username").value.trim();
-          const password = document.getElementById("password").value;
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-          statusEl.textContent = "Logging in as " + username + "...";
-          outputEl.textContent = "{}";
+        const username = document.getElementById("username").value.trim();
+        const password = passwordInput.value;
 
-          try {
-            const response = await fetch("/api/token/", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username, password }),
-            });
+        statusEl.textContent = "Logging in as " + username + "...";
+        outputEl.textContent = "{}";
 
-            if (!response.ok) {
-              throw new Error("Login failed: HTTP " + response.status);
-            }
+        try {
+          const response = await fetch("/api/token/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
 
-            const data = await response.json();
-            accessToken = data.access;
-            currentUser = username;
-
-            queryBtn.disabled = false;
-            eraseBtn.disabled = false;
-
-            statusEl.textContent =
-              "Logged in as " + username + ". Token held in memory.";
-          } catch (error) {
-            accessToken = null;
-            currentUser = null;
-            queryBtn.disabled = true;
-            eraseBtn.disabled = true;
-            statusEl.textContent = "Error: " + error.message;
+          if (!response.ok) {
+            throw new Error("Login failed: HTTP " + response.status);
           }
-        });
+
+          const data = await response.json();
+          accessToken = data.access;
+          currentUser = username;
+          loginForm.hidden = true;
+          loggedInPanel.hidden = false;
+          loggedInUser.textContent = username;
+
+          queryBtn.disabled = !demoPersonId;
+          eraseBtn.disabled = username !== "zoe_self" || !demoPersonId;
+
+          if (demoPersonId) {
+            statusEl.textContent =
+              "Logged in successfully as " + username + ".";
+          } else {
+            statusEl.textContent =
+              "Logged in, but the demonstration person does not exist. " +
+              "Run 'python manage.py seed_demo' and reload this page.";
+          }
+        } catch (error) {
+          accessToken = null;
+          currentUser = null;
+
+          loginForm.hidden = false;
+          loggedInPanel.hidden = true;
+
+          queryBtn.disabled = true;
+          eraseBtn.disabled = true;
+
+          statusEl.textContent = "Error: " + error.message;
+        } finally {
+          passwordInput.value = "";
+          passwordInput.type = "password";
+          togglePasswordBtn.textContent = "Show";
+          togglePasswordBtn.setAttribute("aria-label", "Show password");
+        }
+      });
+
+      logoutBtn.addEventListener("click", () => {
+        accessToken = null;
+        currentUser = null;
+
+        loginForm.hidden = false;
+        loggedInPanel.hidden = true;
+        loggedInUser.textContent = "";
+
+        document.getElementById("username").value = "";
+
+        queryBtn.disabled = true;
+        eraseBtn.disabled = true;
+
+        outputEl.textContent = "{}";
+        statusEl.textContent = "Logged out.";
+      });
 
       queryBtn.addEventListener("click", async () => {
         statusEl.textContent =
@@ -302,9 +411,12 @@
         outputEl.textContent = "{}";
 
         try {
-          const response = await fetch("/api/persons/1/identity/", {
-            headers: { Authorization: "Bearer " + accessToken },
-          });
+          const response = await fetch(
+            "/api/persons/" + demoPersonId + "/identity/",
+            {
+              headers: { Authorization: "Bearer " + accessToken },
+            },
+          );
 
           const data = await response.json();
 
@@ -330,7 +442,7 @@
         outputEl.textContent = "{}";
 
         try {
-          const response = await fetch("/api/persons/1/", {
+          const response = await fetch("/api/persons/" + demoPersonId + "/", {
             method: "DELETE",
             headers: { Authorization: "Bearer " + accessToken },
           });

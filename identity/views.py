@@ -14,7 +14,13 @@ from .services import get_caller_role, get_writable_identity_types
 
 def demo_page(request):
     """Render the frontend web interface."""
-    return render(request, "identity/demo.html")
+    person = Person.objects.filter(email="zoe.taylor@example.com").first()
+
+    return render(
+        request,
+        "identity/demo.html",
+        {"demo_person_id": person.id if person else None},
+    )
 
 
 class PersonIdentityDetailView(APIView):
