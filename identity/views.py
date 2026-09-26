@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
@@ -28,6 +29,9 @@ class PersonIdentityDetailView(APIView):
 
     permission_classes = (IsAuthenticated, HasCallerRole)
 
+    @extend_schema(
+    responses=PersonFilteredSerializer,
+    )
     def get(self, request, person_id):
         """Return permitted identities and ensure users with the self role can only access their own record."""
         person = get_object_or_404(Person, id=person_id)
@@ -63,6 +67,10 @@ class PersonErasureView(APIView):
 
     permission_classes = (IsAuthenticated, HasCallerRole)
 
+    @extend_schema(
+    request=None,
+    responses={204: None},
+    )
     def delete(self, request, person_id):
         """Delete the user's own record while keeping an audit log that no longer identifies the deleted person."""
         person = get_object_or_404(Person, id=person_id)
@@ -97,6 +105,10 @@ class PersonIdentityCollectionView(APIView):
 
     permission_classes = (IsAuthenticated, HasCallerRole)
 
+    @extend_schema(
+    request=IdentityWriteSerializer,
+    responses={201: IdentityWriteSerializer},
+    )
     def post(self, request, person_id):
         """Create an identity record when the caller has write permission for its type."""
         person = get_object_or_404(Person, id=person_id)
@@ -160,6 +172,10 @@ class IdentityDetailView(APIView):
 
         return writable
 
+    @extend_schema(
+        request=IdentityWriteSerializer,
+        responses={200: IdentityWriteSerializer},
+    )
     def put(self, request, identity_id):
         """Update an identity only when the caller has write permission for both the existing type and the new type."""
         identity = get_object_or_404(Identity, id=identity_id)
@@ -188,6 +204,10 @@ class IdentityDetailView(APIView):
 
         return Response(IdentityWriteSerializer(updated).data)
 
+    @extend_schema(
+        request=None,
+        responses={204: None},
+    )
     def delete(self, request, identity_id):
         """Delete an identity only when the caller has write permission for that identity type."""
         identity = get_object_or_404(Identity, id=identity_id)

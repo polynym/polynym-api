@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import Identity, Person
@@ -45,6 +46,7 @@ class PersonFilteredSerializer(serializers.ModelSerializer):
 
         return data
 
+    @extend_schema_field(IdentitySerializer(many=True))
     def get_identities(self, person):
         request = self.context["request"]
         role = get_caller_role(request)
