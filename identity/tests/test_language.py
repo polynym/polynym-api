@@ -47,7 +47,6 @@ class AcceptLanguageTests(APITestCase):
 
     def authenticate(self):
         access = RefreshToken.for_user(self.user).access_token
-        access["role"] = "hr"
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
 
     def _legal_values(self, response):
