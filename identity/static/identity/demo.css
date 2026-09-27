@@ -179,3 +179,28 @@ pre {
 .logged-in-panel p {
   margin: 0;
 }
+
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f766e;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: bold;
+  text-decoration: none;
+  z-index: 1000;
+}
+
+.back-to-top:hover {
+  background: #0c5f59;
+}
+
+.back-to-top:focus-visible {
+  outline: 3px solid #0f2b46;
+  outline-offset: 3px;
+}

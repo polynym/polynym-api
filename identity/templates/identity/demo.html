@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'identity/demo.css' %}" />
   </head>
   <body>
-    <header>
+    <header id="top">
       <h1>Polynym Identity Management API</h1>
       <p>
         Secure caller-aware identity management using JWT authentication and
@@ -144,9 +144,17 @@
         No request made yet.
       </section>
 
-      <h2>API Response</h2>
-      <pre id="output">{}</pre>
+      <section aria-labelledby="api-response-heading">
+        <h2 id="api-response-heading">API Response</h2>
+        <pre id="output">{}</pre>
+      </section>
+
     </main>
+
+    <a href="#top" class="back-to-top">
+      <span aria-hidden="true">↑</span>
+      Back to top
+    </a>
 
     <script src="{% static 'identity/demo.js' %}" defer></script>
   </body>
